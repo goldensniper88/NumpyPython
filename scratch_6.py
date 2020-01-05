@@ -3,17 +3,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # GENERAL INFO
-cover = 2
-db = 1.27
-db_tie = 0.375
-h = 24
-b = 24
+cover = 2   # in
+db = 1.27   # in
+db_tie = 0.375 # in
+h = 24  # in
+b = 24  # in
 Eu = 0.003
-fc = 5000
-fy = 60000
-Es = 29000
-Ag = h * b
-phi2 = 0.8
+fc = 5000 # psi
+fy = 60000 # psi
+Es = 29000000 # psi
+Ag = h * b # in^2
 phimax = 0.65
 Type = 1
 
@@ -24,22 +23,18 @@ else:
 
 # Matrix info
 M = np.array(
-[[1, 1, 1, 1],
- [1, 0, 0, 1],
- [1, 0, 0, 1],
- [1, 1, 1, 1]])
+    [[1, 1, 1, 1],
+     [1, 0, 0, 1],
+     [1, 0, 0, 1],
+     [1, 1, 1, 1]])
 
 # number of columns
-ns = np.size(M,0)
-
+ns = np.size(M, 0)
 
 # area of steel
-ns1 = np.sum(M,0)  #sum bars per column
-ns2 = sum(ns1)     # sum all bars
-As = (np.pi * db**2) / 4  # area of 1 bars
-Ast = ns2 * As
-
-
+n = np.sum(M, 0)  # sum bars per column
+As = (np.pi * db ** 2) / 4  # area of 1 bars /// unit : in^2
+Ast = sum(n) * As  # in^2
 
 # B1
 if fc <= 4000:
@@ -49,17 +44,16 @@ elif fc >= 8000:
 else:
     B1 = (0.85 - (0.00005 * (fc - 4000)))
 
-
 # COVER PLUS DELTA
-d1 = cover + (db/2) + db_tie
-delta = (h - d1*2)/(ns - 1)
+cover = cover + db_tie + db/2  # in
+delta = (h - cover * 2) / (ns - 1)  # in
 
-i = np.arange(1,ns+1,1)
-a = np.arange(1,h,.2)
+i = np.arange(1, ns + 1, 1)
+a = np.arange(1, h, .2)
 
 # d
-d = d1 + (delta *(i-1))
-dt = np.max(d)
+d = cover + (delta * (i - 1))  # in
+dt = max(d)  # in
 # ct
 ct = a / B1
 
@@ -69,19 +63,18 @@ for ii in range(i.size):
         es = Eu * (d[ii] - ct[aa]) / ct[aa]
         fs[ii, aa] = np.sign(es) * min(np.abs(Es * es), fy)
 
-
 # Pn Max
 
 Pnmax = theta * phimax * (0.85 * fc * (Ag - Ast) + (Ast * fy))
 
-#phiA = np.arange(a.size)
+# phiA = np.arange(a.size)
 Pn = np.arange(a.size)
 Mn = np.arange(a.size)
 for aa in range(a.size):
-    et = Eu * ( dt - ct[aa]) / ct[aa]
-    if et > 0.0005:
+    et = Eu * (dt - ct[aa]) / ct[aa]
+    if et > 0.005:
         phiA = 0.9
-    elif et < 0.0002:
+    elif et < 0.002:
         phiA = 0.65
     else:
         phiA = (1.45 + 200 * et) / 3
@@ -89,13 +82,12 @@ for aa in range(a.size):
     pnx = 0
     mnx = 0
     for ii in range(i.size):
-        pnx += As * ns1[ii] * fs[ii][aa]
-        mnx += As * ns1[ii] * fs[ii][aa] * (d[ii]-h/2)
-    Pn[aa] = min((phiA * 0.85 * fc * a[aa] * b - pnx), Pnmax)
-    Mn[aa] = phiA * (0.85 * fc * a[aa] * b * (h/2 - a[aa]/2) + mnx)
+        pnx += As * n[ii] * fs[ii][aa]
+        mnx += As * n[ii] * fs[ii][aa] * (d[ii] - h / 2)
+    Pn[aa] = min((phiA * 0.85 * fc * a[aa] * b - pnx), Pnmax) / 1000
+    Mn[aa] = phiA * (0.85 * fc * a[aa] * b * (h / 2 - a[aa] / 2) + mnx) / 12000
 
-
-plt.plot(Pn, Mn)
+plt.plot(Mn, Pn)
 
 # naming the x axis
 plt.xlabel('Moment (ft*Kips)')
